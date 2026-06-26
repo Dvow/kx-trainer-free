@@ -4,6 +4,7 @@
 #include "gui_style.h"
 
 #include "imgui/imgui.h"
+#include "imgui/imgui_internal.h"
 #include "imgui/imgui_impl_dx11.h"
 #include "imgui/imgui_impl_win32.h"
 
@@ -28,6 +29,114 @@ ID3D11DeviceContext* g_context = nullptr;
 ID3D11RenderTargetView* g_rtv = nullptr;
 UINT g_rtvIndex = UINT_MAX;
 
+bool g_rightMouseDown = false;
+bool g_leftMouseDown = false;
+bool g_wasOverImGuiWindow = false;
+
+void ClearImGuiInputState() {
+    if (!ImGui::GetCurrentContext())
+        return;
+    ImGuiIO& io = ImGui::GetIO();
+    for (int i = 0; i < IM_ARRAYSIZE(io.MouseDown); ++i)
+        io.MouseDown[i] = false;
+    for (int i = 0; i < IM_ARRAYSIZE(io.KeysData); ++i)
+        io.KeysData[i].Down = false;
+    ImGui::ClearActiveID();
+}
+
+LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+    if (msg == WM_RBUTTONDOWN)
+        g_rightMouseDown = true;
+    else if (msg == WM_RBUTTONUP)
+        g_rightMouseDown = false;
+    else if (msg == WM_LBUTTONDOWN)
+        g_leftMouseDown = true;
+    else if (msg == WM_LBUTTONUP)
+        g_leftMouseDown = false;
+
+    if (msg == WM_KILLFOCUS || msg == WM_ACTIVATEAPP) {
+        if (g_imguiReady)
+            ClearImGuiInputState();
+        g_rightMouseDown = false;
+        g_leftMouseDown = false;
+    }
+
+    if (g_imguiReady && g_showMenu && ImGui::GetCurrentContext()) {
+        const bool isMouseButtonEvent = (msg >= WM_LBUTTONDOWN && msg <= WM_XBUTTONDBLCLK);
+        const bool shouldCallImGuiHandler = !isMouseButtonEvent ||
+            ImGui::IsWindowHovered(ImGuiHoveredFlags_AnyWindow | ImGuiHoveredFlags_AllowWhenBlockedByActiveItem) ||
+            ImGui::IsAnyItemActive();
+
+        if (shouldCallImGuiHandler)
+            ImGui_ImplWin32_WndProcHandler(hwnd, msg, wParam, lParam);
+
+        ImGuiIO& io = ImGui::GetIO();
+
+        if (msg == WM_MOUSEMOVE) {
+            g_wasOverImGuiWindow = ImGui::IsWindowHovered(
+                ImGuiHoveredFlags_AnyWindow | ImGuiHoveredFlags_AllowWhenBlockedByActiveItem);
+        }
+
+        switch (msg) {
+        case WM_LBUTTONDOWN:
+        case WM_RBUTTONDOWN:
+        case WM_MBUTTONDOWN:
+        case WM_XBUTTONDOWN:
+        case WM_LBUTTONDBLCLK:
+        case WM_RBUTTONDBLCLK:
+        case WM_MBUTTONDBLCLK:
+        case WM_XBUTTONDBLCLK:
+            if (shouldCallImGuiHandler && io.WantCaptureMouse)
+                return 1;
+            ImGui::ClearActiveID();
+            break;
+
+        case WM_LBUTTONUP:
+        case WM_RBUTTONUP:
+        case WM_MBUTTONUP:
+        case WM_XBUTTONUP:
+            break;
+
+        case WM_MOUSEWHEEL:
+        case WM_MOUSEHWHEEL:
+            if (!shouldCallImGuiHandler)
+                ImGui_ImplWin32_WndProcHandler(hwnd, msg, wParam, lParam);
+            if (io.WantCaptureMouse)
+                return 1;
+            break;
+
+        case WM_MOUSEMOVE:
+            break;
+
+        case WM_KEYDOWN:
+        case WM_KEYUP:
+        case WM_SYSKEYDOWN:
+        case WM_SYSKEYUP:
+            if (wParam >= 256)
+                break;
+            if (!shouldCallImGuiHandler)
+                ImGui_ImplWin32_WndProcHandler(hwnd, msg, wParam, lParam);
+            if (io.WantCaptureKeyboard)
+                return 1;
+            break;
+
+        case WM_CHAR:
+            if (!shouldCallImGuiHandler)
+                ImGui_ImplWin32_WndProcHandler(hwnd, msg, wParam, lParam);
+            if (io.WantTextInput)
+                return 1;
+            break;
+
+        default:
+            break;
+        }
+    }
+
+    return g_origWndProc
+        ? CallWindowProcW(g_origWndProc, hwnd, msg, wParam, lParam)
+        : DefWindowProcW(hwnd, msg, wParam, lParam);
+}
+
 void ShutdownImGui() {
     if (!ImGui::GetCurrentContext())
         return;
@@ -37,18 +146,6 @@ void ShutdownImGui() {
     if (io.BackendPlatformUserData)
         ImGui_ImplWin32_Shutdown();
     ImGui::DestroyContext();
-}
-
-LRESULT CALLBACK WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam) {
-    if (g_showMenu && g_imguiReady) {
-        ImGui_ImplWin32_WndProcHandler(hwnd, msg, wParam, lParam);
-        const ImGuiIO& io = ImGui::GetIO();
-        if (io.WantCaptureMouse && msg >= WM_MOUSEFIRST && msg <= WM_MOUSELAST)
-            return 0;
-        if (io.WantCaptureKeyboard && (msg == WM_KEYDOWN || msg == WM_KEYUP || msg == WM_CHAR))
-            return 0;
-    }
-    return CallWindowProcW(g_origWndProc, hwnd, msg, wParam, lParam);
 }
 
 void HookWindow(HWND hwnd) {
@@ -183,6 +280,10 @@ void Overlay_Shutdown() {
     ReleaseRtv();
     ShutdownImGui();
     g_imguiReady = false;
+
+    g_rightMouseDown = false;
+    g_leftMouseDown = false;
+    g_wasOverImGuiWindow = false;
 
     if (g_context) {
         g_context->Release();
