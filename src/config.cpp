@@ -41,6 +41,7 @@ nlohmann::json defaultDocument() {
             { "z", 0.f },
         } },
         { "sections", nlohmann::json::object() },
+        { "hotkeysRequireFocus", true },
     };
 }
 
@@ -99,6 +100,8 @@ void mergeDefaults(nlohmann::json& doc) {
         doc["position"] = defaultDocument()["position"];
     if (!doc.contains("sections") || !doc["sections"].is_object())
         doc["sections"] = nlohmann::json::object();
+    if (!doc.contains("hotkeysRequireFocus") || !doc["hotkeysRequireFocus"].is_boolean())
+        doc["hotkeysRequireFocus"] = true;
 }
 
 } // namespace
@@ -283,6 +286,23 @@ void setSectionOpen(const std::string& name, bool open) {
     if (!g_loaded)
         return;
     g_data["sections"][name] = open;
+    g_dirty = true;
+}
+
+bool hotkeysRequireFocus(bool defaultValue) {
+    std::lock_guard lock(g_mutex);
+    if (!g_loaded)
+        return defaultValue;
+    if (!g_data.contains("hotkeysRequireFocus") || !g_data["hotkeysRequireFocus"].is_boolean())
+        return defaultValue;
+    return g_data["hotkeysRequireFocus"].get<bool>();
+}
+
+void setHotkeysRequireFocus(bool require) {
+    std::lock_guard lock(g_mutex);
+    if (!g_loaded)
+        return;
+    g_data["hotkeysRequireFocus"] = require;
     g_dirty = true;
 }
 

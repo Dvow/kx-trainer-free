@@ -2,6 +2,7 @@
 
 #include "constants.h"
 #include "hack.h"
+#include "internal/overlay.h"
 #include "key_chord.h"
 #include "log.h"
 #include "shell_util.h"
@@ -12,6 +13,7 @@
 
 #include <cfloat>
 #include <cmath>
+#include <cstring>
 #include <string>
 
 namespace kx {
@@ -114,6 +116,7 @@ HackGUI::HackGUI(Hack& hack, void (*uninject)())
     : m_hack(hack), m_hotkeys(buildHotkeys(uninject)) {
     for (auto& hotkey : m_hotkeys)
         hotkey.currentBinding = Config::hotkeyBindingFor(hotkey.name);
+    m_hotkeysRequireFocus = Config::hotkeysRequireFocus();
     loadHoldModes();
     restoreTogglesFromConfig();
     restoreSectionsFromConfig();
@@ -331,10 +334,38 @@ void HackGUI::handleHotkeys() {
     if (m_rebindPhase != RebindPhase::None)
         return;
 
+    if (!shouldProcessHotkeys()) {
+        releaseHoldToggles();
+        m_prevHeldChord = {};
+        return;
+    }
+
     const Config::KeyChord held = readHeldBindableKeys();
     handleHoldHotkeys(held);
     handlePressedHotkeys(held);
     m_prevHeldChord = held;
+}
+
+bool HackGUI::shouldProcessHotkeys() const {
+    if (!m_hotkeysRequireFocus)
+        return true;
+    const HWND game = Overlay_GameHwnd();
+    return game && GetForegroundWindow() == game;
+}
+
+void HackGUI::releaseHoldToggles() {
+    bool changed = false;
+    for (std::size_t i = 0; i < kToggleCount; ++i) {
+        if (!m_holdMode[i])
+            continue;
+        const auto& toggle = kToggles[i];
+        if ((m_hack.*toggle.isEnabled)()) {
+            (m_hack.*toggle.setEnabled)(false);
+            changed = true;
+        }
+    }
+    if (changed)
+        persistToggles();
 }
 
 void HackGUI::handleRebinding() {
@@ -423,28 +454,32 @@ void HackGUI::renderHotkeys() {
     if (!sectionHeader(2, kSectionNames[2]))
         return;
 
-    if (m_rebindingIndex >= 0) {
-        ImGui::TextColored(ImVec4(1.f, 1.f, 0.f, 1.f),
-            m_rebindPhase == RebindPhase::WaitRelease
-                ? "Rebinding '%s'. Release all keys first..."
-                : "Rebinding '%s'. Hold key combo, then release to confirm (ESC cancel, DEL/BKSP clear)...",
-            m_hotkeys[m_rebindingIndex].name);
-        ImGui::Separator();
+    if (ImGui::Checkbox("Only when game is focused", &m_hotkeysRequireFocus)) {
+        Config::setHotkeysRequireFocus(m_hotkeysRequireFocus);
+        Config::save();
     }
+    ImGui::Spacing();
 
-    if (m_rebindingIndex >= 0)
+    const bool disableHotkeyControls = m_rebindingIndex >= 0;
+    if (disableHotkeyControls)
         ImGui::BeginDisabled();
 
     for (int i = 0; i < static_cast<int>(m_hotkeys.size()); ++i)
         renderHotkeyRow(i);
 
-    if (m_rebindingIndex >= 0)
+    if (disableHotkeyControls)
         ImGui::EndDisabled();
 
     ImGui::Separator();
     if (ImGui::Button("Apply Recommended Defaults")) {
         for (auto& hotkey : m_hotkeys)
             hotkey.currentBinding = hotkey.recommendedBinding;
+        for (std::size_t i = 0; i < kToggleCount; ++i) {
+            const bool hold = std::strcmp(kToggles[i].name, "Super Sprint") == 0
+                || std::strcmp(kToggles[i].name, "Fly") == 0;
+            if (m_holdMode[i] != hold)
+                setHoldMode(i, hold);
+        }
         persistHotkeys();
     }
     ImGui::SameLine();

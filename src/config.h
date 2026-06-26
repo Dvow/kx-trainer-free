@@ -52,4 +52,7 @@ void setSavedPosition(float x, float y, float z);
 bool sectionOpen(const std::string& name, bool defaultOpen = false);
 void setSectionOpen(const std::string& name, bool open);
 
+bool hotkeysRequireFocus(bool defaultValue = true);
+void setHotkeysRequireFocus(bool require);
+
 } // namespace kx::Config

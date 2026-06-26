@@ -43,9 +43,12 @@ private:
     bool m_menuWasVisible = false;
     std::array<bool, kSectionCount> m_sectionsOpen{};
     std::array<bool, kSectionCount> m_sectionsInit{};
+    bool m_hotkeysRequireFocus = true;
 
     void loadHoldModes();
     void setHoldMode(std::size_t toggleIndex, bool hold);
+    bool shouldProcessHotkeys() const;
+    void releaseHoldToggles();
     void handleHotkeys();
     void handleHoldHotkeys(const Config::KeyChord& held);
     void handlePressedHotkeys(const Config::KeyChord& held);

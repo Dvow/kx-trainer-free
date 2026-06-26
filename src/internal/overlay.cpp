@@ -299,4 +299,8 @@ bool Overlay_IsReady() {
     return g_imguiReady;
 }
 
+HWND Overlay_GameHwnd() {
+    return g_hwnd;
+}
+
 }

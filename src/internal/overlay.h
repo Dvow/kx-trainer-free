@@ -1,5 +1,7 @@
 #pragma once
 
+#include <windows.h>
+
 #include <d3d11.h>
 #include <dxgi.h>
 
@@ -10,5 +12,6 @@ void Overlay_OnPresent(IDXGISwapChain* swapChain);
 void Overlay_OnResize();
 void Overlay_Shutdown();
 bool Overlay_IsReady();
+HWND Overlay_GameHwnd();
 
 }
