@@ -64,7 +64,8 @@ bool GetDxgiVtable(void** present, void** present1, void** resize) {
         *present1 = nullptr;
         IDXGISwapChain1* sc1 = nullptr;
         if (SUCCEEDED(sc->QueryInterface(IID_PPV_ARGS(&sc1))) && sc1) {
-            *present1 = (*reinterpret_cast<void***>(sc1))[22];
+            // IDXGISwapChain1::Present1 is vtable slot 20 (22 is IDXGISwapChain2::SetMaximumFrameLatency).
+            *present1 = (*reinterpret_cast<void***>(sc1))[20];
             sc1->Release();
         }
         ok = *present && *resize;
@@ -107,6 +108,8 @@ HRESULT WINAPI hkPresent(IDXGISwapChain* sc, UINT a, UINT b) {
 
 HRESULT WINAPI hkPresent1(IDXGISwapChain1* sc, UINT a, UINT b, const DXGI_PRESENT_PARAMETERS* p) {
     OnPresent(sc);
+    if (!oPresent1)
+        return E_FAIL;
     return oPresent1(sc, a, b, p);
 }
 

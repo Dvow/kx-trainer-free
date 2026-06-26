@@ -121,7 +121,9 @@ void RenderFrame(IDXGISwapChain* swapChain) {
     g_context->OMGetRenderTargets(1, &prevRtv, &prevDsv);
     g_context->OMSetRenderTargets(1, &g_rtv, nullptr);
     ImGui_ImplDX11_RenderDrawData(ImGui::GetDrawData());
-    g_context->OMSetRenderTargets(1, prevRtv ? &prevRtv : nullptr, prevDsv);
+    // NumViews must be 0 when prevRtv is null — D3D11 still dereferences ppRenderTargetViews[0] if NumViews > 0.
+    const UINT numViews = prevRtv ? 1u : 0u;
+    g_context->OMSetRenderTargets(numViews, prevRtv ? &prevRtv : nullptr, prevDsv);
     if (prevRtv) prevRtv->Release();
     if (prevDsv) prevDsv->Release();
 }
