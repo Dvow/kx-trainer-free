@@ -33,7 +33,7 @@ inline constexpr WindowLayout kDefaultWindow{ 20.f, 20.f, 420.f, 550.f };
 bool load();
 bool save(bool force = false);
 
-KeyChord hotkeyBindingFor(const std::string& name, const KeyChord& defaultBinding);
+KeyChord hotkeyBindingFor(const std::string& name);
 void setHotkeyBinding(const std::string& name, const KeyChord& binding);
 
 bool hotkeyHoldFor(const std::string& name, bool defaultValue = false);

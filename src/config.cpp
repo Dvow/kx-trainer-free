@@ -161,14 +161,14 @@ bool save(bool force) {
     return static_cast<bool>(file);
 }
 
-KeyChord hotkeyBindingFor(const std::string& name, const KeyChord& defaultBinding) {
+KeyChord hotkeyBindingFor(const std::string& name) {
     std::lock_guard lock(g_mutex);
     if (!g_loaded)
-        return defaultBinding;
+        return {};
     const auto& hotkeys = g_data["hotkeys"];
     if (!hotkeys.contains(name))
-        return defaultBinding;
-    return readKeyChord(hotkeys[name], defaultBinding);
+        return {};
+    return readKeyChord(hotkeys[name], {});
 }
 
 void setHotkeyBinding(const std::string& name, const KeyChord& binding) {

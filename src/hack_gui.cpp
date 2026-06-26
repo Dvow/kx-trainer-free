@@ -71,7 +71,7 @@ std::vector<Hotkey> buildHotkeys(void (*uninject)()) {
         keys.push_back({
             action.name,
             Config::KeyChord::single(action.defaultVk),
-            Config::KeyChord::single(action.defaultVk),
+            {},
             [fn = action.action](Hack& h) { (h.*fn)(); },
         });
     }
@@ -80,7 +80,7 @@ std::vector<Hotkey> buildHotkeys(void (*uninject)()) {
         keys.push_back({
             toggle.name,
             Config::KeyChord::single(toggle.defaultVk),
-            Config::KeyChord::single(toggle.defaultVk),
+            {},
             [get = toggle.isEnabled, set = toggle.setEnabled](Hack& h) {
                 (h.*set)(!(h.*get)());
             },
@@ -90,7 +90,7 @@ std::vector<Hotkey> buildHotkeys(void (*uninject)()) {
     keys.push_back({
         "Uninject",
         Config::KeyChord::single(UNINJECT),
-        Config::KeyChord::single(UNINJECT),
+        {},
         [uninject](Hack&) {
             if (uninject)
                 uninject();
@@ -113,7 +113,7 @@ bool layoutNearEqual(const Config::WindowLayout& a, const Config::WindowLayout& 
 HackGUI::HackGUI(Hack& hack, void (*uninject)())
     : m_hack(hack), m_hotkeys(buildHotkeys(uninject)) {
     for (auto& hotkey : m_hotkeys)
-        hotkey.currentBinding = Config::hotkeyBindingFor(hotkey.name, hotkey.defaultBinding);
+        hotkey.currentBinding = Config::hotkeyBindingFor(hotkey.name);
     loadHoldModes();
     restoreTogglesFromConfig();
     restoreSectionsFromConfig();
@@ -444,7 +444,7 @@ void HackGUI::renderHotkeys() {
     ImGui::Separator();
     if (ImGui::Button("Apply Recommended Defaults")) {
         for (auto& hotkey : m_hotkeys)
-            hotkey.currentBinding = hotkey.defaultBinding;
+            hotkey.currentBinding = hotkey.recommendedBinding;
         persistHotkeys();
     }
     ImGui::SameLine();
@@ -473,7 +473,7 @@ void HackGUI::renderInfo() {
     if (!sectionHeader(4, kSectionNames[4]))
         return;
 
-    ImGui::TextDisabled("Pause = toggle menu | F2 = uninject (rebindable in Hotkeys)");
+    ImGui::TextDisabled("Pause = toggle menu | Set hotkeys in Hotkeys section");
     ImGui::Separator();
     ImGui::Text("KX Trainer by Krixx");
     ImGui::Text("Consider the paid version at kxtools.xyz!");

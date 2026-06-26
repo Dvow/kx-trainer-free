@@ -13,7 +13,7 @@ class Hack;
 
 struct Hotkey {
     const char* name;
-    Config::KeyChord defaultBinding;
+    Config::KeyChord recommendedBinding;
     Config::KeyChord currentBinding;
     std::function<void(Hack&)> action;
 };
