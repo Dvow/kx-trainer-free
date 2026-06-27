@@ -41,6 +41,17 @@ const char* lookupKeyName(int vk) {
     return it != names.end() ? it->second : nullptr;
 }
 
+const char* keyDisplayName(int vk) {
+    if (vk == 0)
+        return "None";
+    if (const char* name = lookupKeyName(vk))
+        return name;
+
+    static char unknown[32];
+    snprintf(unknown, sizeof(unknown), "VK 0x%02X", vk);
+    return unknown;
+}
+
 } // namespace
 
 void normalizeKeyChord(Config::KeyChord& chord) {
@@ -56,17 +67,6 @@ void addKeyToChord(Config::KeyChord& chord, int vk) {
     }
     chord.keys.push_back(vk);
     normalizeKeyChord(chord);
-}
-
-const char* keyDisplayName(int vk) {
-    if (vk == 0)
-        return "None";
-    if (const char* name = lookupKeyName(vk))
-        return name;
-
-    static char unknown[32];
-    snprintf(unknown, sizeof(unknown), "VK 0x%02X", vk);
-    return unknown;
 }
 
 std::string chordLabel(const Config::KeyChord& chord) {

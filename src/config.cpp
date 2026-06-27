@@ -118,10 +118,6 @@ bool operator==(const KeyChord& a, const KeyChord& b) {
     return a.keys == b.keys;
 }
 
-bool operator!=(const KeyChord& a, const KeyChord& b) {
-    return !(a == b);
-}
-
 bool load() {
     std::lock_guard lock(g_mutex);
     g_data = defaultDocument();

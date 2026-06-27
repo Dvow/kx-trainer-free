@@ -13,7 +13,6 @@ struct KeyChord {
 };
 
 bool operator==(const KeyChord& a, const KeyChord& b);
-bool operator!=(const KeyChord& a, const KeyChord& b);
 
 struct Position {
     float x = 0.f;

@@ -8,8 +8,6 @@ namespace kx {
 
 void normalizeKeyChord(Config::KeyChord& chord);
 void addKeyToChord(Config::KeyChord& chord, int vk);
-
-const char* keyDisplayName(int vk);
 std::string chordLabel(const Config::KeyChord& chord);
 
 bool isBindableKey(int vk);
