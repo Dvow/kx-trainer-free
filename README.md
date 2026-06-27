@@ -20,7 +20,7 @@ While our main development efforts focus on the advanced features in our **[prem
 
 ## A Little History
 
-Originating as a hobby project in 2018, KX Trainer Free has evolved significantly. The codebase, while functional in its earlier versions, has recently undergone substantial refactoring to improve structure, clarity, and maintainability, resulting in a much cleaner state.
+Originating as a hobby project in 2018, KX Trainer Free has evolved significantly. The codebase has recently been refactored into an in-game overlay (DLL injection) to improve structure, clarity, and maintainability.
 
 ## Contributions
 
@@ -28,10 +28,10 @@ We welcome contributions! Pull requests for **bug fixes**, **compatibility updat
 
 ## How to Use
 
-KX Trainer Free is a C++ project designed to work on Windows using Visual Studio.
+KX Trainer Free is a C++ project for Windows. It injects into Guild Wars 2 as a DLL and draws an in-game menu overlay.
 
 ### Prerequisites
-- **Visual Studio**: Ensure that you have Visual Studio installed (2019 or later recommended), with the C++ Desktop Development workload.
+- **Visual Studio 2026** with **Desktop development with C++**, or **Build Tools 2026** with **C++ build tools** (MSVC **v145** toolset).
 
 ### Build Instructions
 
@@ -41,11 +41,17 @@ KX Trainer Free is a C++ project designed to work on Windows using Visual Studio
     git clone https://github.com/Krixx1337/KX-Trainer-Free.git
     ```
 
-2.  **Open the Project in Visual Studio**:
-    *   Navigate to the cloned repository directory.
-    *   Open the `KX-Trainer-Free.sln` file with Visual Studio.
-    *   Select the desired build configuration (e.g., Debug/Release, x64).
-    *   Build the solution (Build > Build Solution or `Ctrl+Shift+B`).
+2.  **Build**:
+    *   Open `KX-Trainer-Free.sln` in Visual Studio, select **Release | x64**, and build the solution (`Ctrl+Shift+B`), **or**
+    *   Run `build.bat` from the repository root (Release x64).
+
+    Outputs are written to `bin/Release/` (`KX-Trainer-Free.dll` and `KXTrainerInject.exe`).
+
+### Running
+
+1.  Start Guild Wars 2 and load into the game world.
+2.  Run `KXTrainerInject.exe` from `bin/Release/` (keep the DLL in the same folder).
+3.  Press **Insert** to toggle the menu. Use the Hotkeys section to set bindings (**Apply Recommended Defaults** for suggested keys). Settings are saved to `config.json` alongside the binaries.
 
 ## Contact & Community
 
