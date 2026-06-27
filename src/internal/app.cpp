@@ -71,7 +71,7 @@ void AppInitThread() {
     {
         std::lock_guard lock(g_mutex);
         g_hack = std::move(hack);
-        g_gui = std::make_unique<HackGUI>(*g_hack, Hooks_Uninject);
+        g_gui = std::make_unique<HackGUI>(*g_hack, Hooks_Unload);
     }
     g_state = AppState::Ready;
 }

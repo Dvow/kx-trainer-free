@@ -20,7 +20,7 @@ struct Hotkey {
 
 class HackGUI {
 public:
-    explicit HackGUI(Hack& hack, void (*uninject)());
+    explicit HackGUI(Hack& hack, void (*unload)());
     void render(bool* showMenu);
     void flushWindowLayout();
 
@@ -28,6 +28,7 @@ private:
     enum class RebindPhase { None, WaitRelease, Listen };
 
     Hack& m_hack;
+    void (*m_unload)();
     std::vector<Hotkey> m_hotkeys;
     std::vector<bool> m_holdMode;
     int m_rebindingIndex = -1;
@@ -66,6 +67,7 @@ private:
     void renderHotkeys();
     void renderLog();
     void renderInfo();
+    void requestUnload();
     void persistHotkeys();
     void persistToggles();
     void restoreTogglesFromConfig();

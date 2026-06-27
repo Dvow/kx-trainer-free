@@ -53,7 +53,7 @@ std::wstring DllPath() {
 
 bool Inject(DWORD pid, const std::wstring& dll) {
     if (IsLoaded(pid)) {
-        std::fwprintf(stderr, L"Already injected - use Uninject in-game first.\n");
+        std::fwprintf(stderr, L"Already injected - use Unload in-game first.\n");
         return false;
     }
 

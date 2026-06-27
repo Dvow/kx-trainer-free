@@ -71,7 +71,7 @@ bool isForcedHoldToggle(std::size_t toggleIndex) {
         || std::strcmp(kToggles[toggleIndex].name, "Fly") == 0;
 }
 
-std::vector<Hotkey> buildHotkeys(void (*uninject)()) {
+std::vector<Hotkey> buildHotkeys(std::function<void(Hack&)> onUnload) {
     std::vector<Hotkey> keys;
     keys.reserve(kToggleHotkeyEnd + 1);
 
@@ -96,13 +96,10 @@ std::vector<Hotkey> buildHotkeys(void (*uninject)()) {
     }
 
     keys.push_back({
-        "Uninject",
-        Config::KeyChord::single(UNINJECT),
+        "Unload",
+        Config::KeyChord::single(UNLOAD),
         {},
-        [uninject](Hack&) {
-            if (uninject)
-                uninject();
-        },
+        std::move(onUnload),
     });
 
     return keys;
@@ -118,8 +115,10 @@ bool layoutNearEqual(const Config::WindowLayout& a, const Config::WindowLayout& 
 
 }
 
-HackGUI::HackGUI(Hack& hack, void (*uninject)())
-    : m_hack(hack), m_hotkeys(buildHotkeys(uninject)) {
+HackGUI::HackGUI(Hack& hack, void (*unload)())
+    : m_hack(hack),
+      m_unload(unload),
+      m_hotkeys(buildHotkeys([this](Hack&) { requestUnload(); })) {
     m_prevChordHeld.resize(m_hotkeys.size());
     for (auto& hotkey : m_hotkeys)
         hotkey.currentBinding = Config::hotkeyBindingFor(hotkey.name);
@@ -558,6 +557,12 @@ void HackGUI::renderInfo() {
         openUrl("https://discord.gg/z92rnB4kHm");
 }
 
+void HackGUI::requestUnload() {
+    flushWindowLayout();
+    if (m_unload)
+        m_unload();
+}
+
 void HackGUI::render(bool* showMenu) {
     handleHotkeys();
     m_hack.tick();
@@ -584,6 +589,11 @@ void HackGUI::render(bool* showMenu) {
     renderHotkeys();
     renderLog();
     renderInfo();
+
+    ImGui::Separator();
+    ImGui::Spacing();
+    if (ImGui::Button("Unload", ImVec2(-1.f, 0.f)))
+        requestUnload();
 
     const ImVec2 pos = ImGui::GetWindowPos();
     const ImVec2 size = ImGui::GetWindowSize();

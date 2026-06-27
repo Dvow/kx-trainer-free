@@ -63,7 +63,7 @@ namespace Hotkeys {
     constexpr int SUPER_SPRINT = VK_RSHIFT;
     constexpr int SPRINT = VK_LSHIFT;
     constexpr int FLY = VK_LCONTROL;
-    constexpr int UNINJECT = VK_F2;
+    constexpr int UNLOAD = VK_F2;
 }
 
 namespace Settings {

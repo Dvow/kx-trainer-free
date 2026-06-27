@@ -10,7 +10,7 @@
 namespace kx {
 namespace {
 
-volatile LONG g_uninjecting = 0;
+volatile LONG g_unloading = 0;
 HMODULE g_module = nullptr;
 
 using PresentFn = HRESULT(WINAPI*)(IDXGISwapChain*, UINT, UINT);
@@ -80,7 +80,7 @@ bool GetDxgiVtable(void** present, void** present1, void** resize) {
 }
 
 void OnPresent(IDXGISwapChain* swapChain) {
-    if (g_uninjecting)
+    if (g_unloading)
         return;
 
     static thread_local bool active = false;
@@ -144,7 +144,7 @@ DWORD WINAPI HooksInitThread(LPVOID) {
     return 0;
 }
 
-DWORD WINAPI UninjectThread(LPVOID) {
+DWORD WINAPI UnloadThread(LPVOID) {
     Sleep(100);
     Hooks_Shutdown();
     Sleep(200);
@@ -175,11 +175,11 @@ void Hooks_Shutdown() {
     MH_Uninitialize();
 }
 
-void Hooks_Uninject() {
-    if (InterlockedCompareExchange(&g_uninjecting, 1, 0) != 0)
+void Hooks_Unload() {
+    if (InterlockedCompareExchange(&g_unloading, 1, 0) != 0)
         return;
 
-    HANDLE t = CreateThread(nullptr, 0, UninjectThread, nullptr, 0, nullptr);
+    HANDLE t = CreateThread(nullptr, 0, UnloadThread, nullptr, 0, nullptr);
     if (t)
         CloseHandle(t);
 }
