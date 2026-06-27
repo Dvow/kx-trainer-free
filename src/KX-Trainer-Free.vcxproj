@@ -101,6 +101,7 @@
     <ClCompile Include="dllmain.cpp" />
     <ClCompile Include="gui_style.cpp" />
     <ClCompile Include="internal\app.cpp" />
+    <ClCompile Include="internal\imgui_game_wndproc.cpp" />
     <ClCompile Include="internal\hooks.cpp" />
     <ClCompile Include="internal\overlay.cpp" />
     <ClCompile Include="log.cpp" />
@@ -132,6 +133,7 @@
   <ItemGroup>
     <ClInclude Include="internal\app.h" />
     <ClInclude Include="internal\hooks.h" />
+    <ClInclude Include="internal\imgui_game_wndproc.h" />
     <ClInclude Include="internal\overlay.h" />
     <ClInclude Include="constants.h" />
     <ClInclude Include="gui_style.h" />
