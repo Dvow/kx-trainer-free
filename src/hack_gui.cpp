@@ -541,8 +541,6 @@ void HackGUI::renderInfo() {
     if (!sectionHeader(4, kSectionNames[4]))
         return;
 
-    ImGui::TextDisabled("Insert = toggle menu | Set hotkeys in Hotkeys section");
-    ImGui::Separator();
     ImGui::Text("KX Trainer by Krixx");
     ImGui::Text("Consider the paid version at kxtools.xyz!");
     ImGui::Separator();
@@ -582,6 +580,9 @@ void HackGUI::render(bool* showMenu) {
     applyWindowLayout();
     ImGui::SetNextWindowSizeConstraints(ImVec2(400.f, 250.f), ImVec2(FLT_MAX, FLT_MAX));
     ImGui::Begin(Constants::APP_NAME, showMenu);
+
+    ImGui::TextDisabled("Press Insert to toggle menu.");
+    ImGui::Separator();
 
     handleRebinding();
     renderToggles();
