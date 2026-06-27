@@ -42,7 +42,7 @@ void DrawErrorUi() {
     ImGui::SetNextWindowSize(ImVec2(420, 250.f), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("KX Trainer - Error", nullptr, ImGuiWindowFlags_NoCollapse)) {
         ImGui::TextWrapped("%s", g_errorMessage.c_str());
-        ImGui::TextDisabled("Press Pause to hide this window.");
+        ImGui::TextDisabled("Press Insert to hide this window.");
         ImGui::Separator();
         Log::renderInline();
     }

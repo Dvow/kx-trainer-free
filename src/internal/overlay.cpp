@@ -16,7 +16,7 @@ extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND, UINT, WPARAM,
 namespace kx {
 namespace {
 
-constexpr int kMenuToggleVk = VK_PAUSE;
+constexpr int kMenuToggleVk = Constants::MENU_TOGGLE;
 
 bool g_imguiReady = false;
 bool g_showMenu = false;

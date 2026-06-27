@@ -10,6 +10,7 @@ constexpr int APP_VERSION = 20200;
 constexpr char APP_NAME[] = "KX Trainer";
 constexpr char API_URL[] = "https://kxtools.xyz/api/v1/version/kx-trainer-free";
 constexpr wchar_t DLL_FILENAME[] = L"KX-Trainer-Free.dll";
+constexpr int MENU_TOGGLE = VK_INSERT;
 
 namespace Scan {
     constexpr uintptr_t BASE_ADDRESS_MIN_VALUE = 0x10000;
@@ -57,7 +58,7 @@ namespace Hotkeys {
     constexpr int WALL_CLIMB = VK_F8;
     constexpr int CLIPPING = VK_F9;
     constexpr int OBJECT_CLIPPING = VK_F10;
-    constexpr int FULL_STRAFE = VK_INSERT;
+    constexpr int FULL_STRAFE = VK_END;
     constexpr int NO_FOG = VK_HOME;
     constexpr int SUPER_SPRINT = VK_RSHIFT;
     constexpr int SPRINT = VK_LSHIFT;

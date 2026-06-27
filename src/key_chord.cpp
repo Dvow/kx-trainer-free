@@ -43,32 +43,13 @@ const char* lookupKeyName(int vk) {
 
 } // namespace
 
-int canonicalKey(int vk) {
-    switch (vk) {
-    case VK_LCONTROL:
-    case VK_RCONTROL:
-        return VK_CONTROL;
-    case VK_LSHIFT:
-    case VK_RSHIFT:
-        return VK_SHIFT;
-    case VK_LMENU:
-    case VK_RMENU:
-        return VK_MENU;
-    default:
-        return vk;
-    }
-}
-
 void normalizeKeyChord(Config::KeyChord& chord) {
-    for (int& vk : chord.keys)
-        vk = canonicalKey(vk);
     auto& keys = chord.keys;
     std::sort(keys.begin(), keys.end());
     keys.erase(std::unique(keys.begin(), keys.end()), keys.end());
 }
 
 void addKeyToChord(Config::KeyChord& chord, int vk) {
-    vk = canonicalKey(vk);
     for (int existing : chord.keys) {
         if (existing == vk)
             return;
@@ -111,17 +92,23 @@ bool isBindableKey(int vk) {
     case VK_CAPITAL:
     case VK_NUMLOCK:
     case VK_SCROLL:
+    case VK_SHIFT:
+    case VK_CONTROL:
+    case VK_MENU:
         return false;
     default:
         return vk > 0 && vk < 256;
     }
 }
 
-bool chordContains(const Config::KeyChord& held, const Config::KeyChord& binding) {
+bool chordHeld(const Config::KeyChord& binding) {
     if (binding.empty())
         return false;
-    return std::includes(held.keys.begin(), held.keys.end(),
-        binding.keys.begin(), binding.keys.end());
+    for (int vk : binding.keys) {
+        if (!(GetAsyncKeyState(vk) & 0x8000))
+            return false;
+    }
+    return true;
 }
 
 Config::KeyChord readHeldBindableKeys() {

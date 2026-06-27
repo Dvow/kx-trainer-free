@@ -129,6 +129,6 @@ int wmain(int argc, wchar_t** argv) {
         return 1;
     }
 
-    std::wprintf(L"OK - press Pause in-game to toggle the menu.\n");
+    std::wprintf(L"OK - press Insert in-game to toggle the menu.\n");
     return 0;
 }

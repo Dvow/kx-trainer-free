@@ -11,6 +11,7 @@
 
 #include <windows.h>
 
+#include <algorithm>
 #include <cfloat>
 #include <cmath>
 #include <cstring>
@@ -65,6 +66,11 @@ std::size_t toggleIndexFromHotkey(int hotkeyIndex) {
     return static_cast<std::size_t>(hotkeyIndex - static_cast<int>(kToggleHotkeyBegin));
 }
 
+bool isForcedHoldToggle(std::size_t toggleIndex) {
+    return std::strcmp(kToggles[toggleIndex].name, "Super Sprint") == 0
+        || std::strcmp(kToggles[toggleIndex].name, "Fly") == 0;
+}
+
 std::vector<Hotkey> buildHotkeys(void (*uninject)()) {
     std::vector<Hotkey> keys;
     keys.reserve(kToggleHotkeyEnd + 1);
@@ -114,6 +120,7 @@ bool layoutNearEqual(const Config::WindowLayout& a, const Config::WindowLayout& 
 
 HackGUI::HackGUI(Hack& hack, void (*uninject)())
     : m_hack(hack), m_hotkeys(buildHotkeys(uninject)) {
+    m_prevChordHeld.resize(m_hotkeys.size());
     for (auto& hotkey : m_hotkeys)
         hotkey.currentBinding = Config::hotkeyBindingFor(hotkey.name);
     m_hotkeysRequireFocus = Config::hotkeysRequireFocus();
@@ -125,11 +132,11 @@ HackGUI::HackGUI(Hack& hack, void (*uninject)())
 void HackGUI::loadHoldModes() {
     m_holdMode.resize(kToggleCount);
     for (std::size_t i = 0; i < kToggleCount; ++i)
-        m_holdMode[i] = Config::hotkeyHoldFor(kToggles[i].name, false);
+        m_holdMode[i] = isForcedHoldToggle(i) || Config::hotkeyHoldFor(kToggles[i].name, false);
 }
 
 void HackGUI::setHoldMode(std::size_t toggleIndex, bool hold) {
-    if (toggleIndex >= kToggleCount)
+    if (toggleIndex >= kToggleCount || (isForcedHoldToggle(toggleIndex) && !hold))
         return;
 
     m_holdMode[toggleIndex] = hold;
@@ -251,9 +258,16 @@ void HackGUI::renderHotkeyRow(int index) {
     if (isToggleHotkeyIndex(index)) {
         const std::size_t ti = toggleIndexFromHotkey(index);
         ImGui::SameLine(360.f);
-        bool hold = m_holdMode[ti];
-        if (ImGui::Checkbox("Hold", &hold))
-            setHoldMode(ti, hold);
+        if (isForcedHoldToggle(ti)) {
+            ImGui::BeginDisabled();
+            bool hold = true;
+            ImGui::Checkbox("Hold", &hold);
+            ImGui::EndDisabled();
+        } else {
+            bool hold = m_holdMode[ti];
+            if (ImGui::Checkbox("Hold", &hold))
+                setHoldMode(ti, hold);
+        }
     }
 
     ImGui::PopID();
@@ -284,7 +298,33 @@ void HackGUI::endRebind() {
     m_rebindPreview = {};
 }
 
-void HackGUI::handleHoldHotkeys(const Config::KeyChord& held) {
+bool HackGUI::bindingInUseByOther(int exceptIndex, const Config::KeyChord& binding) const {
+    if (binding.empty())
+        return false;
+
+    for (int i = 0; i < static_cast<int>(m_hotkeys.size()); ++i) {
+        if (i == exceptIndex || m_hotkeys[i].currentBinding.empty())
+            continue;
+        if (m_hotkeys[i].currentBinding == binding)
+            return true;
+    }
+    return false;
+}
+
+bool HackGUI::tryAssignBinding(int index, const Config::KeyChord& binding) {
+    if (index < 0 || index >= static_cast<int>(m_hotkeys.size()))
+        return false;
+
+    if (!binding.empty() && bindingInUseByOther(index, binding)) {
+        Log::add("WARN: " + chordLabel(binding) + " is already bound to another feature.");
+        return false;
+    }
+
+    m_hotkeys[index].currentBinding = binding;
+    return true;
+}
+
+void HackGUI::handleHoldHotkeys() {
     bool changed = false;
 
     for (std::size_t i = 0; i < kToggleCount; ++i) {
@@ -296,7 +336,7 @@ void HackGUI::handleHoldHotkeys(const Config::KeyChord& held) {
         if (binding.empty())
             continue;
 
-        const bool on = chordContains(held, binding);
+        const bool on = chordHeld(binding);
         if ((m_hack.*toggle.isEnabled)() == on)
             continue;
 
@@ -308,7 +348,7 @@ void HackGUI::handleHoldHotkeys(const Config::KeyChord& held) {
         persistToggles();
 }
 
-void HackGUI::handlePressedHotkeys(const Config::KeyChord& held) {
+void HackGUI::handlePressedHotkeys() {
     for (std::size_t i = 0; i < m_hotkeys.size(); ++i) {
         if (isToggleHotkeyIndex(static_cast<int>(i)) &&
             m_holdMode[toggleIndexFromHotkey(static_cast<int>(i))]) {
@@ -319,9 +359,8 @@ void HackGUI::handlePressedHotkeys(const Config::KeyChord& held) {
         if (hotkey.currentBinding.empty() || !hotkey.action)
             continue;
 
-        const bool active = chordContains(held, hotkey.currentBinding);
-        const bool wasActive = chordContains(m_prevHeldChord, hotkey.currentBinding);
-        if (!active || wasActive)
+        const bool active = chordHeld(hotkey.currentBinding);
+        if (!active || m_prevChordHeld[i])
             continue;
 
         hotkey.action(m_hack);
@@ -336,14 +375,15 @@ void HackGUI::handleHotkeys() {
 
     if (!shouldProcessHotkeys()) {
         releaseHoldToggles();
-        m_prevHeldChord = {};
+        std::fill(m_prevChordHeld.begin(), m_prevChordHeld.end(), false);
         return;
     }
 
-    const Config::KeyChord held = readHeldBindableKeys();
-    handleHoldHotkeys(held);
-    handlePressedHotkeys(held);
-    m_prevHeldChord = held;
+    handleHoldHotkeys();
+    handlePressedHotkeys();
+
+    for (std::size_t i = 0; i < m_hotkeys.size(); ++i)
+        m_prevChordHeld[i] = chordHeld(m_hotkeys[i].currentBinding);
 }
 
 bool HackGUI::shouldProcessHotkeys() const {
@@ -404,8 +444,8 @@ void HackGUI::handleRebinding() {
 
     if (held.empty()) {
         if (!m_rebindPreview.empty() && m_rebindingIndex >= 0) {
-            m_hotkeys[m_rebindingIndex].currentBinding = m_rebindPreview;
-            persistHotkeys();
+            if (tryAssignBinding(m_rebindingIndex, m_rebindPreview))
+                persistHotkeys();
             endRebind();
         }
     }
@@ -474,12 +514,6 @@ void HackGUI::renderHotkeys() {
     if (ImGui::Button("Apply Recommended Defaults")) {
         for (auto& hotkey : m_hotkeys)
             hotkey.currentBinding = hotkey.recommendedBinding;
-        for (std::size_t i = 0; i < kToggleCount; ++i) {
-            const bool hold = std::strcmp(kToggles[i].name, "Super Sprint") == 0
-                || std::strcmp(kToggles[i].name, "Fly") == 0;
-            if (m_holdMode[i] != hold)
-                setHoldMode(i, hold);
-        }
         persistHotkeys();
     }
     ImGui::SameLine();
@@ -508,7 +542,7 @@ void HackGUI::renderInfo() {
     if (!sectionHeader(4, kSectionNames[4]))
         return;
 
-    ImGui::TextDisabled("Pause = toggle menu | Set hotkeys in Hotkeys section");
+    ImGui::TextDisabled("Insert = toggle menu | Set hotkeys in Hotkeys section");
     ImGui::Separator();
     ImGui::Text("KX Trainer by Krixx");
     ImGui::Text("Consider the paid version at kxtools.xyz!");
@@ -525,8 +559,8 @@ void HackGUI::renderInfo() {
 }
 
 void HackGUI::render(bool* showMenu) {
-    m_hack.tick();
     handleHotkeys();
+    m_hack.tick();
 
     const bool visible = showMenu && *showMenu;
     if (m_menuWasVisible && !visible) {

@@ -33,7 +33,7 @@ private:
     int m_rebindingIndex = -1;
     RebindPhase m_rebindPhase = RebindPhase::None;
     Config::KeyChord m_rebindPreview;
-    Config::KeyChord m_prevHeldChord;
+    std::vector<bool> m_prevChordHeld;
     std::array<bool, 256> m_keyWasDown{};
 
     Config::WindowLayout m_window{};
@@ -50,11 +50,13 @@ private:
     bool shouldProcessHotkeys() const;
     void releaseHoldToggles();
     void handleHotkeys();
-    void handleHoldHotkeys(const Config::KeyChord& held);
-    void handlePressedHotkeys(const Config::KeyChord& held);
+    void handleHoldHotkeys();
+    void handlePressedHotkeys();
     void handleRebinding();
     void beginRebind(int index);
     void endRebind();
+    bool bindingInUseByOther(int exceptIndex, const Config::KeyChord& binding) const;
+    bool tryAssignBinding(int index, const Config::KeyChord& binding);
     bool keyDown(int vk) const;
     bool keyPressed(int vk);
     void updateKeyState();

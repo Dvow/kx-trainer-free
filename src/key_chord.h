@@ -6,7 +6,6 @@
 
 namespace kx {
 
-int canonicalKey(int vk);
 void normalizeKeyChord(Config::KeyChord& chord);
 void addKeyToChord(Config::KeyChord& chord, int vk);
 
@@ -14,7 +13,7 @@ const char* keyDisplayName(int vk);
 std::string chordLabel(const Config::KeyChord& chord);
 
 bool isBindableKey(int vk);
-bool chordContains(const Config::KeyChord& held, const Config::KeyChord& binding);
+bool chordHeld(const Config::KeyChord& binding);
 Config::KeyChord readHeldBindableKeys();
 bool anyInputHeld();
 
