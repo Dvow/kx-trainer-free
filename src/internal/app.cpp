@@ -41,6 +41,9 @@ void DrawErrorUi() {
     ImGui::SetNextWindowPos(ImVec2(20, 20), ImGuiCond_FirstUseEver);
     ImGui::SetNextWindowSize(ImVec2(420, 250.f), ImGuiCond_FirstUseEver);
     if (ImGui::Begin("KX Trainer - Error", nullptr, ImGuiWindowFlags_NoCollapse)) {
+        if (ImGui::Button("Unload", ImVec2(-1.f, 0.f)))
+            Hooks_Unload();
+        ImGui::Separator();
         ImGui::TextWrapped("%s", g_errorMessage.c_str());
         ImGui::TextDisabled("Press Insert to hide this window.");
         ImGui::Separator();
@@ -106,6 +109,8 @@ void App_DrawUi(bool* showMenu) {
         }
         return;
     case AppState::Failed:
+        if (g_openMenuWhenReady.exchange(false))
+            *showMenu = true;
         if (showMenu && *showMenu)
             DrawErrorUi();
         return;
