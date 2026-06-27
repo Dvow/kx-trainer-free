@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstdint>
 #include <windows.h>
 
 namespace kx {
@@ -24,10 +25,8 @@ private:
     static LRESULT CALLBACK trampoline(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
     LRESULT dispatch(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
-    bool routeMouseToImGui() const;
-    bool filterImGui(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
+    bool handleMenu(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
     LRESULT forwardToGame(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lParam);
-    void forwardKeyUp(HWND hwnd, WPARAM vk);
     void syncStuckKeys(HWND hwnd);
 
     static ImGuiGameWndProc* instance_;
@@ -37,6 +36,7 @@ private:
     ImGuiHandler imguiHandler_ = nullptr;
     bool menuVisible_ = false;
     bool imguiReady_ = false;
+    uint8_t gameMouseDown_ = 0;
     bool gameKeyDown_[256]{};
 };
 
