@@ -6,7 +6,7 @@
 namespace kx {
 namespace Constants {
 
-constexpr int APP_VERSION = 20200;
+constexpr int APP_VERSION = 30000;
 constexpr char APP_NAME[] = "KX Trainer";
 constexpr char API_URL[] = "https://kxtools.xyz/api/v1/version/kx-trainer-free";
 constexpr wchar_t DLL_FILENAME[] = L"KX-Trainer-Free.dll";
